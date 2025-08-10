@@ -66,6 +66,7 @@ db.serialize(() => {
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    profile_photo TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -319,7 +320,8 @@ app.get('/api/users/:username/posts', authenticateToken, (req, res) => {
           id: user.id,
           username: user.username,
           email: user.email,
-          created_at: user.created_at
+          created_at: user.created_at,
+          profile_photo: user.profile_photo
         },
         posts: posts
       });

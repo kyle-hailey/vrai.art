@@ -581,6 +581,30 @@ code {
   border: 2px solid #e4e6ea;
 }
 
+.profile-photo-small {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.profile-photo-medium {
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+}
+
+.profile-photo-large {
+  width: 96px;
+  height: 96px;
+  font-size: 36px;
+}
+
+.profile-photo-xlarge {
+  width: 128px;
+  height: 128px;
+  font-size: 48px;
+}
+
 .profile-photo-placeholder {
   border-radius: 50%;
   display: flex;
@@ -591,49 +615,25 @@ code {
   border: 2px solid #e4e6ea;
 }
 
-.profile-photo.w-8.h-8 {
+.profile-photo-placeholder-small {
   width: 32px;
   height: 32px;
   font-size: 14px;
 }
 
-.profile-photo.w-12.h-12 {
+.profile-photo-placeholder-medium {
   width: 48px;
   height: 48px;
   font-size: 18px;
 }
 
-.profile-photo.w-24.h-24 {
+.profile-photo-placeholder-large {
   width: 96px;
   height: 96px;
   font-size: 36px;
 }
 
-.profile-photo.w-32.h-32 {
-  width: 128px;
-  height: 128px;
-  font-size: 48px;
-}
-
-.profile-photo-placeholder.w-8.h-8 {
-  width: 32px;
-  height: 32px;
-  font-size: 14px;
-}
-
-.profile-photo-placeholder.w-12.h-12 {
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
-}
-
-.profile-photo-placeholder.w-24.h-24 {
-  width: 96px;
-  height: 96px;
-  font-size: 36px;
-}
-
-.profile-photo-placeholder.w-32.h-32 {
+.profile-photo-placeholder-xlarge {
   width: 128px;
   height: 128px;
   font-size: 48px;

@@ -57,13 +57,13 @@ const ProfilePhoto = ({
   const getSizeClasses = () => {
     switch (size) {
       case 'small':
-        return 'w-8 h-8 text-sm';
+        return 'profile-photo-small';
       case 'large':
-        return 'w-24 h-24 text-2xl';
+        return 'profile-photo-large';
       case 'xlarge':
-        return 'w-32 h-32 text-3xl';
+        return 'profile-photo-xlarge';
       default: // medium
-        return 'w-12 h-12 text-lg';
+        return 'profile-photo-medium';
     }
   };
 
@@ -74,7 +74,7 @@ const ProfilePhoto = ({
       {photoUrl ? (
         <img
           src={photoUrl}
-          alt={`${username || 'User'} profile photo`}
+          alt={`${username || 'User'}`}
           className={`profile-photo ${getSizeClasses()} rounded-full object-cover`}
           onError={(e) => {
             e.target.style.display = 'none';
@@ -85,7 +85,7 @@ const ProfilePhoto = ({
       
       {(!photoUrl || size === 'large' || size === 'xlarge') && (
         <div 
-          className={`profile-photo-placeholder ${getSizeClasses()} rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold`}
+          className={`profile-photo-placeholder ${getSizeClasses().replace('profile-photo-', 'profile-photo-placeholder-')} rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold`}
           style={{ display: photoUrl ? 'none' : 'flex' }}
         >
           {username ? username.charAt(0).toUpperCase() : 'U'}

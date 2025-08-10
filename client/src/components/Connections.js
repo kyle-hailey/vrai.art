@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 import ProfilePhoto from './ProfilePhoto';
 
 const Connections = () => {
@@ -9,7 +8,6 @@ const Connections = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notification, setNotification] = useState({ message: '', type: '' });
-  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     fetchConnections();
