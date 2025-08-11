@@ -2,8 +2,9 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://vraiart--vraiart-456e0.us-central1.hosted.app/api',
-  timeout: 10000,
+  baseURL: 'https://vraiart--vraiart-4
+  6e0.us-central1.hosted.app/api',
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api', // Use env variable or fallback
 });
 
 // Request interceptor to add auth token
