@@ -1,3 +1,4 @@
+
 # Vrai.art - Social Media Platform
 
 A modern, full-stack social media application built with React, Node.js, and SQLite.

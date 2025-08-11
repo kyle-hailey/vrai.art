@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://vraiart--vraiart-456e0.us-central1.hosted.app/api',
   timeout: 10000,
 });
 
