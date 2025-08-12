@@ -17,21 +17,23 @@ const Login = () => {
 
   // Debug: Log when error state changes
   useEffect(() => {
-    console.log('🔄 Error state changed to:', error);
+    // Force console output that's harder to hide
+    console.warn('🔄 Error state changed to:', error);
+    console.error('🚨 ERROR STATE UPDATE:', error);
     
     // Additional debugging for error visibility
     if (error) {
-      console.log('🔍 Error is set, checking DOM in 100ms...');
+      console.warn('🔍 Error is set, checking DOM in 100ms...');
       setTimeout(() => {
         const errorDiv = document.querySelector('.alert-error');
         if (errorDiv) {
-          console.log('🎯 Found error div in DOM:', errorDiv);
-          console.log('🎯 Error div is visible:', errorDiv.offsetParent !== null);
-          console.log('🎯 Error div display style:', window.getComputedStyle(errorDiv).display);
-          console.log('🎯 Error div visibility style:', window.getComputedStyle(errorDiv).visibility);
-          console.log('🎯 Error div opacity style:', window.getComputedStyle(errorDiv).opacity);
+          console.warn('🎯 Found error div in DOM:', errorDiv);
+          console.warn('🎯 Error div is visible:', errorDiv.offsetParent !== null);
+          console.warn('🎯 Error div display style:', window.getComputedStyle(errorDiv).display);
+          console.warn('🎯 Error div visibility style:', window.getComputedStyle(errorDiv).visibility);
+          console.warn('🎯 Error div opacity style:', window.getComputedStyle(errorDiv).opacity);
         } else {
-          console.log('❌ Error div NOT found in DOM after 100ms');
+          console.error('❌ Error div NOT found in DOM after 100ms');
         }
       }, 100);
     }
@@ -87,58 +89,66 @@ const Login = () => {
           Sign in to view posts and interact with the community
         </p>
         
+        {/* Debug info - always visible and hard to miss */}
+        <div style={{ 
+          backgroundColor: '#ff0000', 
+          color: 'white',
+          padding: '15px', 
+          marginBottom: '20px', 
+          fontSize: '16px', 
+          fontFamily: 'monospace',
+          border: '3px solid #000',
+          fontWeight: 'bold',
+          textAlign: 'center'
+        }}>
+          🚨 DEBUG INFO - ALWAYS VISIBLE 🚨<br/>
+          Error State: "{error || 'none'}"<br/>
+          Loading: {loading ? 'true' : 'false'}<br/>
+          Timestamp: {new Date().toLocaleTimeString()}
+        </div>
+        
+        {/* Always show error state for debugging */}
+        <div style={{ 
+          marginBottom: '20px',
+          padding: '10px',
+          backgroundColor: error ? '#ff0000' : '#00ff00',
+          color: 'white',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          borderRadius: '8px',
+          border: '2px solid #000'
+        }}>
+          {error ? (
+            <>
+              🚨 ERROR DISPLAYED: {error} 🚨<br/>
+              <small>This should be visible when there's an error</small>
+            </>
+          ) : (
+            <>
+              ✅ NO ERROR - Ready for login ✅<br/>
+              <small>Error state is currently empty</small>
+            </>
+          )}
+        </div>
+        
+        {/* Original error display (conditional) */}
         {error && (
-          <>
-            {/* Primary error display */}
-            <div 
-              className="alert alert-error" 
-              style={{ 
-                marginBottom: '20px',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#dc2626',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-              onLoad={() => console.log('🎯 Error div loaded and rendered')}
-              ref={(el) => {
-                if (el) {
-                  console.log('🎯 Error div DOM element created:', el);
-                  console.log('🎯 Error div text content:', el.textContent);
-                  console.log('🎯 Error div is visible:', el.offsetParent !== null);
-                  console.log('🎯 Error div computed styles:', window.getComputedStyle(el));
-                }
-              }}
-            >
-              <strong>Error:</strong> {error}
-              <br />
-              <small style={{ fontSize: '12px', opacity: 0.8 }}>
-                Debug: Error state is set to: "{error}"
-              </small>
-              <br />
-              <small style={{ fontSize: '10px', opacity: 0.6 }}>
-                Timestamp: {new Date().toLocaleTimeString()}
-              </small>
-            </div>
-            
-            {/* Backup error display - harder to hide */}
-            <div 
-              style={{ 
-                marginBottom: '20px',
-                padding: '8px 12px',
-                backgroundColor: '#dc2626',
-                color: 'white',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                borderRadius: '4px'
-              }}
-            >
-              🚨 LOGIN ERROR: {error} 🚨
-            </div>
-          </>
+          <div 
+            className="alert alert-error" 
+            style={{ 
+              marginBottom: '20px',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            <strong>Error:</strong> {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit}>
