@@ -24,7 +24,24 @@ const Login = () => {
       const timer = setTimeout(() => {
         // This ensures the error state persists
       }, 100);
-      return () => clearTimeout(timer);
+      
+      // Prevent the error from being hidden by injected scripts
+      const preventHide = () => {
+        const errorDiv = document.getElementById('error-debug-display');
+        if (errorDiv && errorDiv.style.display === 'none') {
+          errorDiv.style.display = 'block';
+          errorDiv.style.visibility = 'visible';
+          errorDiv.style.opacity = '1';
+        }
+      };
+      
+      // Check every 100ms to prevent hiding
+      const hideCheckInterval = setInterval(preventHide, 100);
+      
+      return () => {
+        clearTimeout(timer);
+        clearInterval(hideCheckInterval);
+      };
     }
   }, [error]);
 
@@ -118,27 +135,34 @@ const Login = () => {
           Timestamp: {new Date().toLocaleTimeString()}
         </div>
         
-        {/* Always show error state for debugging */}
-        <div style={{ 
-          marginBottom: '20px',
-          padding: '10px',
-          backgroundColor: error ? '#ff0000' : '#00ff00',
-          color: 'white',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          borderRadius: '8px',
-          border: '2px solid #000'
-        }}>
+        {/* Always show error state for debugging - HARD TO HIDE */}
+        <div 
+          id="error-debug-display"
+          style={{ 
+            marginBottom: '20px',
+            padding: '15px',
+            backgroundColor: error ? '#ff0000' : '#00ff00',
+            color: 'white',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            borderRadius: '8px',
+            border: '3px solid #000',
+            position: 'relative',
+            zIndex: 9999,
+            boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+          }}
+        >
           {error ? (
             <>
               🚨 ERROR DISPLAYED: {error} 🚨<br/>
-              <small>This should be visible when there's an error</small>
+              <small style={{ fontSize: '12px' }}>This should be visible when there's an error</small><br/>
+              <small style={{ fontSize: '10px', opacity: 0.8 }}>Error ID: {Date.now()}</small>
             </>
           ) : (
             <>
               ✅ NO ERROR - Ready for login ✅<br/>
-              <small>Error state is currently empty</small>
+              <small style={{ fontSize: '12px' }}>Error state is currently empty</small>
             </>
           )}
         </div>
