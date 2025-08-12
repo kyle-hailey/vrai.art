@@ -1,8 +1,11 @@
 import axios from 'axios';
 
 // Create axios instance with base configuration
+
 const api = axios.create({
-  baseURL: 'https://vraiart--vraiart-46e0.us-central1.hosted.app/api',
+  baseURL: 'https://vraiart--vraiart-456e0.us-central1.hosted.app/api',
+  timeout: 10000,
+});
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
