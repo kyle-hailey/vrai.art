@@ -5,6 +5,93 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+    
+    <!-- Block injected scripts that hide error messages -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://vraiart--vraiart-456e0.us-central1.hosted.app; object-src 'none';" />
+    
+    <!-- Block specific injected.js script -->
+    <script>
+      // Prevent injected.js from hiding error messages
+      (function() {
+        // Block immediately, don't wait for DOMContentLoaded
+        window.hideNotification = function() { return false; };
+        window.hideError = function() { return false; };
+        window.hideMessage = function() { return false; };
+        
+        // Override console methods that might be used to hide errors
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+          if (args[0] && typeof args[0] === 'string' && args[0].includes('hide-notification')) {
+            return; // Block hide-notification errors
+          }
+          return originalConsoleError.apply(console, args);
+        };
+        
+        // Block script injection before DOM is ready
+        const originalCreateElement = document.createElement;
+        document.createElement = function(tagName) {
+          const element = originalCreateElement.call(document, tagName);
+          if (tagName.toLowerCase() === 'script') {
+            Object.defineProperty(element, 'src', {
+              set: function(value) {
+                if (value && value.includes('injected.js')) {
+                  console.log('Blocked injected.js script creation');
+                  return;
+                }
+                this.setAttribute('src', value);
+              }
+            });
+          }
+          return element;
+        };
+        
+        // Enhanced DOM monitoring
+        window.addEventListener('DOMContentLoaded', function() {
+          // Monitor for script injection attempts
+          const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+              if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                  if (node.tagName === 'SCRIPT') {
+                    if (node.src && node.src.includes('injected.js')) {
+                      console.log('Blocked injected.js script');
+                      node.remove();
+                    }
+                    // Block any script with hide-notification functionality
+                    if (node.textContent && node.textContent.includes('hide-notification')) {
+                      console.log('Blocked hide-notification script');
+                      node.remove();
+                    }
+                  }
+                });
+              }
+            });
+          });
+          
+          observer.observe(document.head, { childList: true, subtree: true });
+          observer.observe(document.body, { childList: true, subtree: true });
+          
+          // Global error protection
+          window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('hide-notification')) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }
+          });
+          
+          // Override common hide methods
+          const originalHide = Element.prototype.hide;
+          Element.prototype.hide = function() {
+            if (this.id === 'error-debug-display' || this.classList.contains('alert-error')) {
+              console.log('Blocked hide attempt on error display');
+              return this;
+            }
+            return originalHide ? originalHide.call(this) : this;
+          };
+        });
+      })();
+    </script>
     <meta
       name="description"
       content="A simplified social media platform inspired by Facebook and Tribe.net"

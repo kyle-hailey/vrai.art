@@ -28,15 +28,31 @@ const Login = () => {
       // Prevent the error from being hidden by injected scripts
       const preventHide = () => {
         const errorDiv = document.getElementById('error-debug-display');
-        if (errorDiv && errorDiv.style.display === 'none') {
-          errorDiv.style.display = 'block';
-          errorDiv.style.visibility = 'visible';
-          errorDiv.style.opacity = '1';
+        if (errorDiv) {
+          // Force visibility with multiple methods
+          errorDiv.style.display = 'block !important';
+          errorDiv.style.visibility = 'visible !important';
+          errorDiv.style.opacity = '1 !important';
+          errorDiv.style.position = 'relative !important';
+          errorDiv.style.zIndex = '9999 !important';
+          
+          // Remove any classes that might hide it
+          errorDiv.classList.remove('hidden', 'd-none', 'invisible');
+          
+          // Force inline styles
+          errorDiv.setAttribute('style', errorDiv.getAttribute('style') + '; display: block !important; visibility: visible !important; opacity: 1 !important;');
         }
       };
       
-      // Check every 100ms to prevent hiding
-      const hideCheckInterval = setInterval(preventHide, 100);
+      // Check every 50ms to prevent hiding (more aggressive)
+      const hideCheckInterval = setInterval(preventHide, 50);
+      
+      // Also prevent any global hide functions
+      if (typeof window !== 'undefined') {
+        window.hideNotification = () => false;
+        window.hideError = () => false;
+        window.hideMessage = () => false;
+      }
       
       return () => {
         clearTimeout(timer);
