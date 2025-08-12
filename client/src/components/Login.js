@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
+  console.log('🔍 Login component loaded - version 2.0 with improved error handling');
+  
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -13,6 +15,11 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Debug: Log when error state changes
+  useEffect(() => {
+    console.log('🔄 Error state changed to:', error);
+  }, [error]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -22,28 +29,35 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 Login form submitted with username:', formData.username);
+    
     setError('');
     setLoading(true);
 
     if (!formData.username || !formData.password) {
+      console.log('❌ Form validation failed - missing fields');
       setError('Please fill in all fields');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('📡 Calling login function...');
       const result = await login(formData.username, formData.password);
+      console.log('📥 Login result received:', result);
       
       if (result.success) {
+        console.log('✅ Login successful, navigating to home');
         navigate('/');
       } else {
+        console.log('❌ Login failed with error:', result.error);
         setError(result.error || 'Login failed. Please try again.');
-        console.log('Login error:', result.error);
       }
     } catch (err) {
-      console.error('Login submission error:', err);
+      console.error('💥 Login submission error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
+      console.log('🏁 Login process completed, setting loading to false');
       setLoading(false);
     }
   };
@@ -68,6 +82,10 @@ const Login = () => {
             fontWeight: '500'
           }}>
             <strong>Error:</strong> {error}
+            <br />
+            <small style={{ fontSize: '12px', opacity: 0.8 }}>
+              Debug: Error state is set to: "{error}"
+            </small>
           </div>
         )}
 
