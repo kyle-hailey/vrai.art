@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import ProfilePhoto from './ProfilePhoto';
+import { uploadsBaseUrl } from '../config';
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -164,7 +165,7 @@ const Home = () => {
               {post.image_filename && (
                 <div className="post-image">
                   <img 
-                    src={`http://localhost:5000/uploads/${post.image_filename}`}
+                    src={`${uploadsBaseUrl}/${post.image_filename}`}
                     alt="Post content"
                     className="post-image-content"
                   />

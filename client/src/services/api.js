@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { apiBaseUrl } from '../config';
 
-// Create axios instance with base configuration
+// Create axios instance with configurable base URL
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: apiBaseUrl,
   timeout: 10000,
 });
 
@@ -13,12 +14,6 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Only set Content-Type for JSON requests, not for multipart form data
-    if (!config.headers['Content-Type'] && !(config.data instanceof FormData)) {
-      config.headers['Content-Type'] = 'application/json';
-    }
-    
     return config;
   },
   (error) => {
@@ -31,7 +26,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to login
+      // Unauthorized - clear token and redirect to login
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
@@ -39,4 +34,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api; 
+export default api;

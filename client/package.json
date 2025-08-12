@@ -15,7 +15,11 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "start:dev": "cp env.development .env && react-scripts start",
+    "start:prod": "cp env.production .env && react-scripts start",
     "build": "react-scripts build",
+    "build:dev": "cp env.development .env && react-scripts build",
+    "build:prod": "cp env.production .env && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
