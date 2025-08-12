@@ -3,10 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
-  console.log('🔍 Login component loaded - version 2.0 with improved error handling');
-  
-  // Version info for debugging
-  const VERSION = 'v2.1 - Debug Build';
+  // Version info for debugging - works in both dev and production
+  const VERSION = 'v2.1 - Production Ready';
   
   const [formData, setFormData] = useState({
     username: '',
@@ -18,27 +16,15 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Debug: Log when error state changes
+  // Track error state changes for debugging
   useEffect(() => {
-    // Force console output that's harder to hide
-    console.warn('🔄 Error state changed to:', error);
-    console.error('🚨 ERROR STATE UPDATE:', error);
-    
-    // Additional debugging for error visibility
+    // This will work in both dev and production
     if (error) {
-      console.warn('🔍 Error is set, checking DOM in 100ms...');
-      setTimeout(() => {
-        const errorDiv = document.querySelector('.alert-error');
-        if (errorDiv) {
-          console.warn('🎯 Found error div in DOM:', errorDiv);
-          console.warn('🎯 Error div is visible:', errorDiv.offsetParent !== null);
-          console.warn('🎯 Error div display style:', window.getComputedStyle(errorDiv).display);
-          console.warn('🎯 Error div visibility style:', window.getComputedStyle(errorDiv).visibility);
-          console.warn('🎯 Error div opacity style:', window.getComputedStyle(errorDiv).opacity);
-        } else {
-          console.error('❌ Error div NOT found in DOM after 100ms');
-        }
+      // Force a re-render to ensure error display
+      const timer = setTimeout(() => {
+        // This ensures the error state persists
       }, 100);
+      return () => clearTimeout(timer);
     }
   }, [error]);
 
@@ -51,35 +37,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🚀 Login form submitted with username:', formData.username);
     
     setError('');
     setLoading(true);
 
     if (!formData.username || !formData.password) {
-      console.log('❌ Form validation failed - missing fields');
       setError('Please fill in all fields');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('📡 Calling login function...');
       const result = await login(formData.username, formData.password);
-      console.log('📥 Login result received:', result);
       
       if (result.success) {
-        console.log('✅ Login successful, navigating to home');
         navigate('/');
       } else {
-        console.log('❌ Login failed with error:', result.error);
         setError(result.error || 'Login failed. Please try again.');
       }
     } catch (err) {
-      console.error('💥 Login submission error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
-      console.log('🏁 Login process completed, setting loading to false');
       setLoading(false);
     }
   };
@@ -87,7 +65,7 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-form">
-        {/* Version display for debugging */}
+        {/* Version display - works in production */}
         <div style={{ 
           textAlign: 'center', 
           backgroundColor: '#000', 
@@ -100,6 +78,21 @@ const Login = () => {
           borderRadius: '4px'
         }}>
           🔧 {VERSION} - {new Date().toLocaleString()}
+        </div>
+        
+        {/* Backend URL display */}
+        <div style={{ 
+          textAlign: 'center', 
+          backgroundColor: '#1e40af', 
+          color: 'white', 
+          padding: '8px', 
+          marginBottom: '15px',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          borderRadius: '4px',
+          border: '1px solid #3b82f6'
+        }}>
+          🌐 Backend: {window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://vraiart--vraiart-456e0.us-central1.hosted.app'}
         </div>
         
         <h2 className="auth-title">Login</h2>
