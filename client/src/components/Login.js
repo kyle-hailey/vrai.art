@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
   console.log('🔍 Login component loaded - version 2.0 with improved error handling');
   
+  // Version info for debugging
+  const VERSION = 'v2.1 - Debug Build';
+  
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -84,6 +87,21 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-form">
+        {/* Version display for debugging */}
+        <div style={{ 
+          textAlign: 'center', 
+          backgroundColor: '#000', 
+          color: '#00ff00', 
+          padding: '5px', 
+          marginBottom: '15px',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          fontWeight: 'bold',
+          borderRadius: '4px'
+        }}>
+          🔧 {VERSION} - {new Date().toLocaleString()}
+        </div>
+        
         <h2 className="auth-title">Login</h2>
         <p style={{ textAlign: 'center', color: '#65676b', marginBottom: '20px' }}>
           Sign in to view posts and interact with the community
