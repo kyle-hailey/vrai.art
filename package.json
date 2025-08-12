@@ -8,6 +8,8 @@
     "server": "nodemon server/index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
+    "build:prod": "cd client && npm run build:prod",
+    "build:dev": "cd client && npm run build:dev",
     "install-all": "npm install && cd client && npm install",
     "start": "node server/index.js"
   },

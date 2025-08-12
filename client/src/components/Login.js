@@ -31,15 +31,21 @@ const Login = () => {
       return;
     }
 
-    const result = await login(formData.username, formData.password);
-    
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.error);
+    try {
+      const result = await login(formData.username, formData.password);
+      
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.error || 'Login failed. Please try again.');
+        console.log('Login error:', result.error);
+      }
+    } catch (err) {
+      console.error('Login submission error:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
@@ -51,8 +57,17 @@ const Login = () => {
         </p>
         
         {error && (
-          <div className="alert alert-error">
-            {error}
+          <div className="alert alert-error" style={{ 
+            marginBottom: '20px',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            <strong>Error:</strong> {error}
           </div>
         )}
 

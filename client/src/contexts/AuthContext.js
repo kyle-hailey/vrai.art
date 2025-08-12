@@ -41,8 +41,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log('Attempting login for username:', username);
       const response = await api.post('/login', { username, password });
       const { token, user } = response.data;
+      
+      console.log('Login successful, setting token and user');
       
       // Set token in localStorage and axios headers first
       localStorage.setItem('token', token);
@@ -56,6 +59,13 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
       return { 
         success: false, 
         error: error.response?.data?.error || 'Login failed' 
