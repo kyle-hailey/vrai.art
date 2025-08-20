@@ -710,13 +710,22 @@ app.delete('/api/connections/:connectionId', authenticateToken, (req, res) => {
 });
 
 // Email configuration
-const transporter = nodemailer.createTransporter({
-  service: 'gmail', // You can change this to other services
-  auth: {
-    user: process.env.EMAIL_USER || 'your-email@gmail.com',
-    pass: process.env.EMAIL_PASS || 'your-app-password'
-  }
-});
+let transporter = null;
+
+// Only create transporter if email credentials are provided
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail', // You can change this to other services
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+  
+  console.log('Email transporter configured successfully');
+} else {
+  console.log('Email credentials not configured. Password reset emails will not be sent.');
+}
 
 // Forgot password endpoint
 app.post('/api/auth/forgot-password', async (req, res) => {
@@ -751,11 +760,20 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           return res.status(500).json({ error: 'Failed to generate reset token' });
         }
         
+        // Check if email is configured
+        if (!transporter) {
+          console.log(`Password reset token generated for user ${user.username} but email not configured`);
+          return res.status(503).json({ 
+            error: 'Password reset emails are not configured. Please contact an administrator.',
+            token: resetToken // For development/testing purposes
+          });
+        }
+        
         // Send email with reset link
         const resetUrl = `${config.frontend.baseURL}/reset-password?token=${resetToken}`;
         
         const mailOptions = {
-          from: process.env.EMAIL_USER || 'your-email@gmail.com',
+          from: process.env.EMAIL_USER,
           to: email,
           subject: 'Password Reset Request',
           html: `
