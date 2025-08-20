@@ -2,7 +2,7 @@
 const config = {
   // Backend configuration
   backend: {
-    host: process.env.BACKEND_HOST || '0.0.0.0',
+    host: process.env.BACKEND_HOST || '3.142.69.98',
     port: process.env.BACKEND_PORT || 8000,
     get baseURL() {
       return `http://${this.host}:${this.port}`;
@@ -17,7 +17,7 @@ const config = {
   
   // Frontend configuration
   frontend: {
-    host: process.env.FRONTEND_HOST || '0.0.0.0',
+    host: process.env.FRONTEND_HOST || '3.142.69.98',
     port: process.env.FRONTEND_PORT || 3000,
     get baseURL() {
       return `http://${this.host}:${this.port}`;

@@ -74,6 +74,11 @@ code {
   background-color: #da190b;
 }
 
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
 .form-group {
   margin-bottom: 20px;
 }

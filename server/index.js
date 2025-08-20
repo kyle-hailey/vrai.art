@@ -72,7 +72,7 @@ const upload = multer({
 // app.use(limiter);
 
 // Database setup
-const db = new sqlite3.Database('./social.db');
+const db = new sqlite3.Database(path.join(__dirname, 'social.db'));
 
 // Create tables
 db.serialize(() => {
@@ -267,6 +267,8 @@ app.post('/api/posts', authenticateToken, upload.single('image'), async (req, re
 app.get('/api/posts', authenticateToken, (req, res) => {
   const currentUserId = req.user.id;
   
+  console.log('Fetching posts for user ID:', currentUserId);
+  
   const query = `
     SELECT 
       p.id, p.content, p.image_filename, p.visibility, p.created_at,
@@ -287,10 +289,17 @@ app.get('/api/posts', authenticateToken, (req, res) => {
     ORDER BY p.created_at DESC
   `;
   
+  console.log('Executing posts query with user ID:', currentUserId);
+  
   db.all(query, [currentUserId, currentUserId, currentUserId], (err, posts) => {
     if (err) {
+      console.error('Database error fetching posts:', err);
       return res.status(500).json({ error: 'Error fetching posts' });
     }
+    
+    console.log('Successfully fetched posts:', posts.length, 'posts found');
+    console.log('Posts data:', posts);
+    
     res.json(posts);
   });
 });
@@ -377,6 +386,66 @@ app.get('/api/posts/:id', authenticateToken, (req, res) => {
       );
     }
   );
+});
+
+// Delete a post (protected route - users can only delete their own posts)
+app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    // First get the post to check ownership and get image filename
+    db.get('SELECT * FROM posts WHERE id = ?', [postId], async (err, post) => {
+      if (err) {
+        console.error('Error fetching post for deletion:', err);
+        return res.status(500).json({ error: 'Error fetching post' });
+      }
+
+      if (!post) {
+        return res.status(404).json({ error: 'Post not found' });
+      }
+
+      // Check if user owns the post
+      if (post.user_id !== userId) {
+        return res.status(403).json({ error: 'You can only delete your own posts' });
+      }
+
+      // Delete associated comments first (due to foreign key constraint)
+      db.run('DELETE FROM comments WHERE post_id = ?', [postId], function(err) {
+        if (err) {
+          console.error('Error deleting comments:', err);
+          return res.status(500).json({ error: 'Error deleting post comments' });
+        }
+
+        console.log(`Deleted ${this.changes} comments for post ${postId}`);
+
+        // Delete the post
+        db.run('DELETE FROM posts WHERE id = ?', [postId], async function(err) {
+          if (err) {
+            console.error('Error deleting post:', err);
+            return res.status(500).json({ error: 'Error deleting post' });
+          }
+
+          // Delete associated image file if it exists
+          if (post.image_filename) {
+            try {
+              await storageService.deleteFile(post.image_filename);
+              console.log(`Deleted image file: ${post.image_filename}`);
+            } catch (imageError) {
+              console.error('Error deleting image file:', imageError);
+              // Don't fail the request if image deletion fails
+            }
+          }
+
+          console.log(`Successfully deleted post ${postId}`);
+          res.json({ message: 'Post deleted successfully' });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error in delete post:', error);
+    res.status(500).json({ error: 'Error deleting post' });
+  }
 });
 
 // Create a comment
@@ -632,35 +701,74 @@ app.delete('/api/connections/:connectionId', authenticateToken, (req, res) => {
 app.get('/api/connections', authenticateToken, (req, res) => {
   const userId = req.user.id;
   
-  const query = `
-    SELECT 
-      c.id as connection_id,
-      u.id, u.username, u.created_at, u.profile_photo,
-      c.status, c.created_at as connection_date
-    FROM connections c
-    JOIN users u ON (
-      CASE 
-        WHEN c.requester_id = ? THEN c.addressee_id = u.id
-        ELSE c.requester_id = u.id
-      END
-    )
-    WHERE c.status = 'accepted'
-    ORDER BY u.username
-  `;
-  
-  db.all(query, [userId], (err, connections) => {
+  // First check if the profile_photo column exists
+  db.get("PRAGMA table_info(users)", (err, columns) => {
     if (err) {
-      console.error('Error fetching connections:', err);
-      return res.status(500).json({ error: 'Failed to fetch connections' });
+      console.error('Error checking table schema:', err);
+      return res.status(500).json({ error: 'Database schema error' });
     }
     
-    res.json(connections);
+    console.log('Users table columns:', columns);
+    
+    // Check if profile_photo column exists
+    db.get("SELECT COUNT(*) as count FROM pragma_table_info('users') WHERE name='profile_photo'", (err, result) => {
+      if (err) {
+        console.error('Error checking for profile_photo column:', err);
+        return res.status(500).json({ error: 'Database schema check failed' });
+      }
+      
+      console.log('profile_photo column exists:', result.count > 0);
+      
+      if (result.count === 0) {
+        // Column doesn't exist, add it
+        db.run('ALTER TABLE users ADD COLUMN profile_photo TEXT', (err) => {
+          if (err) {
+            console.error('Error adding profile_photo column:', err);
+            return res.status(500).json({ error: 'Failed to update database schema' });
+          }
+          
+          console.log('Added profile_photo column to users table');
+          // Continue with the original query
+          executeConnectionsQuery();
+        });
+      } else {
+        // Column exists, execute the original query
+        executeConnectionsQuery();
+      }
+    });
   });
+  
+  function executeConnectionsQuery() {
+    const query = `
+      SELECT 
+        c.id as connection_id,
+        u.id, u.username, u.created_at, u.profile_photo,
+        c.status, c.created_at as connection_date
+      FROM connections c
+      JOIN users u ON (
+        CASE 
+          WHEN c.requester_id = ? THEN c.addressee_id = u.id
+          ELSE c.requester_id = u.id
+        END
+      )
+      WHERE c.status = 'accepted'
+      ORDER BY u.username
+    `;
+    
+    db.all(query, [userId], (err, connections) => {
+      if (err) {
+        console.error('Error fetching connections:', err);
+        return res.status(500).json({ error: 'Failed to fetch connections' });
+      }
+      
+      res.json(connections);
+    });
+  }
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT} and bound to all interfaces (0.0.0.0)`);
 });
 
 // Graceful shutdown

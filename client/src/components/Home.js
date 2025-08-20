@@ -52,6 +52,20 @@ const Home = () => {
     }
   };
 
+  const handleDeletePost = async (postId) => {
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      try {
+        await api.delete(`/posts/${postId}`);
+        setPosts(posts.filter(post => post.id !== postId));
+        alert('Post deleted successfully!');
+      } catch (err) {
+        setError('Failed to delete post');
+        console.error('Error deleting post:', err);
+        console.error('Error response:', err.response?.data);
+      }
+    }
+  };
+
   // Show loading while checking authentication
   if (authLoading) {
     return (
@@ -173,12 +187,23 @@ const Home = () => {
               )}
               
               <div className="post-actions">
-                <Link to={`/posts/${post.id}`} style={{ color: '#1877f2', textDecoration: 'none', fontWeight: '500' }}>
-                  View Post →
-                </Link>
-                <span style={{ color: '#65676b', fontSize: '14px' }}>
-                  {post.comment_count} comment{post.comment_count !== 1 ? 's' : ''}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <Link to={`/posts/${post.id}`} style={{ color: '#1877f2', textDecoration: 'none', fontWeight: '500' }}>
+                    View Post →
+                  </Link>
+                  <span style={{ color: '#65676b', fontSize: '14px' }}>
+                    {post.comment_count} comment{post.comment_count !== 1 ? 's' : ''}
+                  </span>
+                  {user && post.author === user.username && (
+                    <button
+                      onClick={() => handleDeletePost(post.id)}
+                      className="btn btn-danger btn-small"
+                      style={{ fontSize: '12px', padding: '4px 8px' }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

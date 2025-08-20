@@ -64,6 +64,19 @@ const PostDetail = () => {
     }
   };
 
+  const handleDeletePost = async (postId) => {
+    if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      try {
+        await api.delete(`/posts/${postId}`);
+        alert('Post deleted successfully!');
+        navigate('/'); // Redirect to home page
+      } catch (err) {
+        setError('Failed to delete post');
+        console.error('Error deleting post:', err);
+      }
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -98,13 +111,22 @@ const PostDetail = () => {
   return (
     <div>
       <div style={{ marginBottom: '20px' }}>
-        <button 
-          onClick={() => navigate('/')} 
-          className="btn btn-secondary"
-          style={{ marginBottom: '20px' }}
-        >
-          ← Back to Posts
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            className="btn btn-secondary"
+          >
+            ← Back to Posts
+          </button>
+          {user && post.author === user.username && (
+            <button
+              onClick={() => handleDeletePost(post.id)}
+              className="btn btn-danger"
+            >
+              Delete Post
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="post-card">
