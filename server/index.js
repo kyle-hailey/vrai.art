@@ -8,10 +8,26 @@ const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
 const storageService = require('./services/storageService');
+const config = require('../config');
+
+// Debug the config import
+console.log('Config file path:', require.resolve('../config'));
+console.log('Config object:', config);
+console.log('Config backend port:', config.backend.port);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const PORT = config.backend.port;
+const JWT_SECRET = config.jwt.secret;
+
+// Debug output to see what's being loaded
+console.log('Config loaded:', {
+  backendHost: config.backend.host,
+  backendPort: config.backend.port,
+  backendBaseURL: config.backend.baseURL,
+  backendApiURL: config.backend.apiURL
+});
+
+console.log('Server will start on port:', PORT);
 
 // Trust proxy for rate limiting (fixes X-Forwarded-For warning)
 app.set('trust proxy', 1);
