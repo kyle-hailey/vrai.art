@@ -5,6 +5,8 @@ import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import CreatePost from './components/CreatePost';
 import PostDetail from './components/PostDetail';
 import Profile from './components/Profile';
@@ -30,6 +32,8 @@ function AppRoutes() {
             <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
             <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
             <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+            <Route path="/forgot-password" element={user ? <Navigate to="/" /> : <ForgotPassword />} />
+            <Route path="/reset-password" element={user ? <Navigate to="/" /> : <ResetPassword />} />
             <Route 
               path="/create-post" 
               element={

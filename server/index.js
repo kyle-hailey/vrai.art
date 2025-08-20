@@ -7,6 +7,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const storageService = require('./services/storageService');
 const config = require('../config');
 
@@ -117,6 +119,16 @@ db.serialize(() => {
     FOREIGN KEY (requester_id) REFERENCES users (id),
     FOREIGN KEY (addressee_id) REFERENCES users (id),
     UNIQUE(requester_id, addressee_id)
+  )`);
+
+  // Password reset tokens table
+  db.run(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT UNIQUE NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
   )`);
 });
 
@@ -695,6 +707,135 @@ app.delete('/api/connections/:connectionId', authenticateToken, (req, res) => {
       res.json({ message: 'Connection removed successfully' });
     });
   });
+});
+
+// Email configuration
+const transporter = nodemailer.createTransporter({
+  service: 'gmail', // You can change this to other services
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password'
+  }
+});
+
+// Forgot password endpoint
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    // Check if user exists
+    db.get('SELECT id, username FROM users WHERE email = ?', [email], async (err, user) => {
+      if (err) {
+        console.error('Database error checking user:', err);
+        return res.status(500).json({ error: 'Server error' });
+      }
+      
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+      }
+      
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+      
+      // Store reset token in database
+      db.run('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)', 
+        [user.id, resetToken, expiresAt.toISOString()], function(err) {
+        if (err) {
+          console.error('Error storing reset token:', err);
+          return res.status(500).json({ error: 'Failed to generate reset token' });
+        }
+        
+        // Send email with reset link
+        const resetUrl = `${config.frontend.baseURL}/reset-password?token=${resetToken}`;
+        
+        const mailOptions = {
+          from: process.env.EMAIL_USER || 'your-email@gmail.com',
+          to: email,
+          subject: 'Password Reset Request',
+          html: `
+            <h2>Password Reset Request</h2>
+            <p>Hello ${user.username},</p>
+            <p>You requested a password reset for your account.</p>
+            <p>Click the link below to reset your password:</p>
+            <a href="${resetUrl}" style="display: inline-block; background-color: #1877f2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Reset Password</a>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this reset, please ignore this email.</p>
+            <p>Best regards,<br>Your App Team</p>
+          `
+        };
+        
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error('Error sending email:', error);
+            return res.status(500).json({ error: 'Failed to send reset email' });
+          }
+          
+          console.log('Password reset email sent:', info.messageId);
+          res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error in forgot password:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reset password endpoint
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    // Find valid reset token
+    db.get('SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now")', 
+      [token], async (err, resetToken) => {
+      if (err) {
+        console.error('Database error checking reset token:', err);
+        return res.status(500).json({ error: 'Server error' });
+      }
+      
+      if (!resetToken) {
+        return res.status(400).json({ error: 'Invalid or expired reset token' });
+      }
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // Update user password
+      db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, resetToken.user_id], function(err) {
+        if (err) {
+          console.error('Error updating password:', err);
+          return res.status(500).json({ error: 'Failed to update password' });
+        }
+        
+        // Delete used reset token
+        db.run('DELETE FROM password_reset_tokens WHERE id = ?', [resetToken.id], (err) => {
+          if (err) {
+            console.error('Error deleting reset token:', err);
+          }
+        });
+        
+        res.json({ message: 'Password updated successfully' });
+      });
+    });
+  } catch (error) {
+    console.error('Error in reset password:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Get user's connections
