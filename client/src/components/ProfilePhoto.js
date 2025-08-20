@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import { getUploadsUrl } from '../config';
 
 const ProfilePhoto = ({ 
   currentPhoto, 
@@ -51,7 +52,7 @@ const ProfilePhoto = ({
 
   const getPhotoUrl = (photoFilename) => {
     if (!photoFilename) return null;
-    return `http://localhost:5000/uploads/${photoFilename}`;
+    return getUploadsUrl(photoFilename);
   };
 
   const getSizeClasses = () => {

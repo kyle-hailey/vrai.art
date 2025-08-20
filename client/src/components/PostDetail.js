@@ -10,6 +10,7 @@ const PostDetail = () => {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
