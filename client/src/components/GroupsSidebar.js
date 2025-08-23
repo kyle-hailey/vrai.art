@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../config';
 import './GroupsSidebar.css';
 
-const GroupsSidebar = () => {
+const GroupsSidebar = ({ onCollapseChange }) => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +25,13 @@ const GroupsSidebar = () => {
       fetchUserGroups();
     }
   }, [location.pathname]);
+
+  // Notify parent component of collapse state changes
+  useEffect(() => {
+    if (onCollapseChange) {
+      onCollapseChange(isCollapsed);
+    }
+  }, [isCollapsed, onCollapseChange]);
 
   const fetchUserGroups = async () => {
     try {
@@ -74,18 +82,43 @@ const GroupsSidebar = () => {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   if (!user || !token) {
     return null; // Don't show sidebar if not logged in
   }
 
   if (loading) {
     return (
-      <div className="groups-sidebar">
-        <div className="sidebar-header">
-          <h3>My Groups</h3>
+      <div className={`groups-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="user-section">
+          <div className="user-info">
+            <div className="user-avatar">
+              {user.profile_photo ? (
+                <img src={`${getApiUrl()}/uploads/${user.profile_photo}`} alt={user.username} />
+              ) : (
+                <span>{user.username.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            {!isCollapsed && (
+              <div className="user-details">
+                <div className="username">{user.username}</div>
+                <div className="user-status">Online</div>
+              </div>
+            )}
+          </div>
+          <button 
+            className="create-group-btn"
+            onClick={() => navigate('/groups')}
+            title="Create or manage groups"
+          >
+            +
+          </button>
         </div>
         <div className="sidebar-content">
-          <div className="loading-groups">Loading...</div>
+          <div className="loading-groups">Loading groups...</div>
         </div>
       </div>
     );
@@ -93,9 +126,30 @@ const GroupsSidebar = () => {
 
   if (error) {
     return (
-      <div className="groups-sidebar">
-        <div className="sidebar-header">
-          <h3>My Groups</h3>
+      <div className={`groups-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="user-section">
+          <div className="user-info">
+            <div className="user-avatar">
+              {user.profile_photo ? (
+                <img src={`${getApiUrl()}/uploads/${user.profile_photo}`} alt={user.username} />
+              ) : (
+                <span>{user.username.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            {!isCollapsed && (
+              <div className="user-details">
+                <div className="username">{user.username}</div>
+                <div className="user-status">Online</div>
+              </div>
+            )}
+          </div>
+          <button 
+            className="create-group-btn"
+            onClick={() => navigate('/groups')}
+            title="Create or manage groups"
+          >
+            +
+          </button>
         </div>
         <div className="sidebar-content">
           <div className="error-message">Error loading groups</div>
@@ -105,9 +159,24 @@ const GroupsSidebar = () => {
   }
 
   return (
-    <div className="groups-sidebar">
-      <div className="sidebar-header">
-        <h3>My Groups</h3>
+    <div className={`groups-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      {/* User Section */}
+      <div className="user-section">
+        <div className="user-info">
+          <div className="user-avatar">
+            {user.profile_photo ? (
+              <img src={`${getApiUrl()}/uploads/${user.profile_photo}`} alt={user.username} />
+            ) : (
+              <span>{user.username.charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          {!isCollapsed && (
+            <div className="user-details">
+              <div className="username">{user.username}</div>
+              <div className="user-status">Online</div>
+            </div>
+          )}
+        </div>
         <button 
           className="create-group-btn"
           onClick={() => navigate('/groups')}
@@ -117,20 +186,35 @@ const GroupsSidebar = () => {
         </button>
       </div>
       
-      <div className="sidebar-content">
-        {groups.length === 0 ? (
-          <div className="no-groups">
-            <p>No groups yet</p>
+      {/* Groups Section */}
+      <div className="groups-section">
+        <div className="section-header">
+          <h3>My Groups</h3>
+          <div className="header-controls">
+            <span className="group-count">{groups.length}</span>
             <button 
-              className="join-groups-btn"
-              onClick={() => navigate('/discover')}
+              className="collapse-btn"
+              onClick={toggleSidebar}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              Discover Groups
+              {isCollapsed ? '◀' : '▶'}
             </button>
           </div>
-        ) : (
-          <div className="groups-list">
-            {groups.map(group => (
+        </div>
+        
+        <div className="groups-list">
+          {groups.length === 0 ? (
+            <div className="no-groups">
+              <p>No groups yet</p>
+              <button 
+                className="join-groups-btn"
+                onClick={() => navigate('/discover')}
+              >
+                Join Groups
+              </button>
+            </div>
+          ) : (
+            groups.map(group => (
               <div 
                 key={group.id} 
                 className={`group-item ${location.pathname.includes(`/groups/${group.id}`) ? 'active' : ''}`}
@@ -138,11 +222,9 @@ const GroupsSidebar = () => {
               >
                 <div className="group-info">
                   <span className="group-name">{group.name}</span>
-                  {group.unread_posts > 0 && (
-                    <span className="unread-badge">
-                      {group.unread_posts}
-                    </span>
-                  )}
+                  <span className={`unread-badge ${group.unread_posts > 0 ? 'has-unread' : 'no-unread'}`}>
+                    {group.unread_posts}
+                  </span>
                 </div>
                 
                 {group.unread_posts > 0 && (
@@ -155,10 +237,13 @@ const GroupsSidebar = () => {
                   </button>
                 )}
               </div>
-            ))}
-          </div>
-        )}
-        
+            ))
+          )}
+        </div>
+      </div>
+      
+      {/* Footer Section */}
+      {!isCollapsed && (
         <div className="sidebar-footer">
           <button 
             className="discover-btn"
@@ -167,7 +252,7 @@ const GroupsSidebar = () => {
             Discover More Groups
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

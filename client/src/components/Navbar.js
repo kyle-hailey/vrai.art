@@ -51,9 +51,6 @@ const Navbar = () => {
                 <Link to="/groups" className="nav-link">
                   My Groups
                 </Link>
-                <Link to="/discover" className="nav-link">
-                  Discover Groups
-                </Link>
                 <Link to="/connections" className="nav-link">
                   Connections
                   {connectionCount > 0 && (

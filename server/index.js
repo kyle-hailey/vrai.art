@@ -1406,6 +1406,46 @@ app.get('/api/groups/:groupId/posts', authenticateToken, (req, res) => {
   });
 });
 
+// Get details for a specific group
+app.get('/api/groups/:groupId', authenticateToken, (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.id;
+
+  // Check if user is a member of the group
+  db.get(
+    'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
+    [groupId, userId],
+    (err, member) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (!member) {
+        return res.status(403).json({ error: 'Access denied. You are not a member of this group.' });
+      }
+
+      // Get group details
+      db.get(
+        'SELECT * FROM groups WHERE id = ?',
+        [groupId],
+        (err, group) => {
+          if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+
+          if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+          }
+
+          res.json({ group });
+        }
+      );
+    }
+  );
+});
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT} and bound to all interfaces (0.0.0.0)`);
