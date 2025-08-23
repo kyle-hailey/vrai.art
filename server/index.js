@@ -863,7 +863,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     // Find valid reset token
     console.log('Looking for reset token in database...');
     db.get('SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now")', 
-      [token], async (err, resetToken) => {
+      [token], (err, resetToken) => {
       if (err) {
         console.error('Database error checking reset token:', err);
         return res.status(500).json({ error: 'Server error' });
@@ -879,31 +879,48 @@ app.post('/api/auth/reset-password', async (req, res) => {
       
       // Hash new password
       console.log('Hashing new password...');
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      console.log('Password hashed successfully, length:', hashedPassword.length);
-      
-      // Update user password
-      console.log('Updating user password in database...');
-      db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, resetToken.user_id], function(err) {
-        if (err) {
-          console.error('Error updating password:', err);
-          return res.status(500).json({ error: 'Failed to update password' });
-        }
+      bcrypt.hash(newPassword, 10).then(hashedPassword => {
+        console.log('Password hashed successfully, length:', hashedPassword.length);
         
-        console.log('Password updated successfully. Rows affected:', this.changes);
+        // Update user password
+        console.log('Updating user password in database...');
+        console.log('SQL: UPDATE users SET password = ? WHERE id = ?');
+        console.log('Parameters:', [hashedPassword.substring(0, 20) + '...', resetToken.user_id]);
         
-        // Delete used reset token
-        console.log('Deleting used reset token...');
-        db.run('DELETE FROM password_reset_tokens WHERE id = ?', [resetToken.id], (err) => {
+        db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, resetToken.user_id], function(err) {
           if (err) {
-            console.error('Error deleting reset token:', err);
-          } else {
-            console.log('Reset token deleted successfully');
+            console.error('Error updating password:', err);
+            return res.status(500).json({ error: 'Failed to update password' });
           }
+          
+          console.log('Password update result - Rows affected:', this.changes);
+          console.log('Last ID:', this.lastID);
+          
+          if (this.changes === 0) {
+            console.error('❌ Password update failed - no rows affected!');
+            console.error('User ID:', resetToken.user_id);
+            console.error('Hashed password length:', hashedPassword.length);
+            return res.status(500).json({ error: 'Password update failed - no rows affected' });
+          }
+          
+          console.log('✅ Password updated successfully. Rows affected:', this.changes);
+          
+          // Delete used reset token
+          console.log('Deleting used reset token...');
+          db.run('DELETE FROM password_reset_tokens WHERE id = ?', [resetToken.id], (err) => {
+            if (err) {
+              console.error('Error deleting reset token:', err);
+            } else {
+              console.log('Reset token deleted successfully');
+            }
+          });
+          
+          console.log('Password reset completed successfully for user ID:', resetToken.user_id);
+          res.json({ message: 'Password updated successfully' });
         });
-        
-        console.log('Password reset completed successfully for user ID:', resetToken.user_id);
-        res.json({ message: 'Password updated successfully' });
+      }).catch(hashError => {
+        console.error('Error hashing password:', hashError);
+        res.status(500).json({ error: 'Failed to hash password' });
       });
     });
   } catch (error) {
