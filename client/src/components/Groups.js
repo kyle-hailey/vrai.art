@@ -13,15 +13,35 @@ const Groups = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
+  console.log('Groups component mounted');
+  console.log('Current user:', user);
+  console.log('Current token:', token ? 'exists' : 'missing');
+  console.log('Token length:', token ? token.length : 0);
+  console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'none');
+  console.log('User object keys:', user ? Object.keys(user) : 'no user');
+  console.log('useAuth hook result:', { user, token });
+
   useEffect(() => {
+    console.log('Groups useEffect triggered');
     if (user && token) {
+      console.log('User and token found, fetching groups...');
       fetchUserGroups();
+    } else {
+      console.log('No user or token, setting loading to false');
+      setLoading(false);
     }
   }, [user, token]);
 
   const fetchUserGroups = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log('Fetching user groups...');
+      console.log('API URL:', `${getApiUrl()}/user/groups`);
+      console.log('User:', user);
+      console.log('Token exists:', !!token);
+      
       const response = await fetch(`${getApiUrl()}/user/groups`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -29,14 +49,22 @@ const Groups = () => {
         }
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch groups');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch groups: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
-      setGroups(data.groups);
+      console.log('Groups data received:', data);
+      
+      setGroups(data.groups || []);
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching groups:', err);
+      setError(err.message || 'Failed to fetch groups');
     } finally {
       setLoading(false);
     }
