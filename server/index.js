@@ -9,6 +9,7 @@ const multer = require('multer');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+require('dotenv').config(); // Load environment variables from .env file
 const storageService = require('./services/storageService');
 const config = require('../config');
 
@@ -714,17 +715,34 @@ let transporter = null;
 
 // Only create transporter if email credentials are provided
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail', // You can change this to other services
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-  
-  console.log('Email transporter configured successfully');
+  try {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+    
+    // Test the connection
+    transporter.verify(function(error, success) {
+      if (error) {
+        console.error('Email configuration error:', error.message);
+        console.log('Email functionality will be disabled. Please check your EMAIL_USER and EMAIL_PASS environment variables.');
+        transporter = null;
+      } else {
+        console.log('✅ Email transporter configured successfully');
+        console.log('📧 Server is ready to send emails');
+      }
+    });
+  } catch (error) {
+    console.error('Failed to create email transporter:', error.message);
+    transporter = null;
+  }
 } else {
-  console.log('Email credentials not configured. Password reset emails will not be sent.');
+  console.log('⚠️  Email credentials not configured');
+  console.log('   Set EMAIL_USER and EMAIL_PASS environment variables to enable password reset emails');
+  console.log('   Password reset functionality will work but emails will not be sent');
 }
 
 // Forgot password endpoint
@@ -763,8 +781,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         // Check if email is configured
         if (!transporter) {
           console.log(`Password reset token generated for user ${user.username} but email not configured`);
+          console.log(`Reset token: ${resetToken}`);
           return res.status(503).json({ 
-            error: 'Password reset emails are not configured. Please contact an administrator.',
+            error: 'Password reset emails are not configured on this server.',
+            message: 'Please contact an administrator for assistance.',
+            note: 'A reset token was generated but could not be sent via email.',
             token: resetToken // For development/testing purposes
           });
         }
@@ -791,7 +812,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
             console.error('Error sending email:', error);
-            return res.status(500).json({ error: 'Failed to send reset email' });
+            // Don't return 500 error, instead return success with a note
+            console.log(`Password reset token generated for user ${user.username}: ${resetToken}`);
+            return res.json({ 
+              message: 'Password reset link generated successfully. Check your email (or contact support if email fails).',
+              note: 'Email delivery failed, but reset token was created. Contact support for assistance.',
+              token: resetToken // For development/testing purposes
+            });
           }
           
           console.log('Password reset email sent:', info.messageId);
