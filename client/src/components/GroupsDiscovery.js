@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../config';
 import './GroupsDiscovery.css';
 
@@ -10,7 +10,7 @@ const GroupsDiscovery = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all'); // all, popular, recent
-  const { user, token } = useContext(AuthContext);
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

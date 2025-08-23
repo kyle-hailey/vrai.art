@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../config';
 import './Groups.css';
 
@@ -10,7 +10,7 @@ const Groups = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: '', description: '', isPublic: true });
-  const { user, token } = useContext(AuthContext);
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
