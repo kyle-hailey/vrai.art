@@ -131,6 +131,49 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id)
   )`);
+
+  // Groups table
+  db.run(`CREATE TABLE IF NOT EXISTS groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    creator_id INTEGER NOT NULL,
+    is_public INTEGER DEFAULT 1 CHECK(is_public IN (0, 1)),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (creator_id) REFERENCES users (id)
+  )`);
+
+  // Group members table
+  db.run(`CREATE TABLE IF NOT EXISTS group_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    role TEXT DEFAULT 'member' CHECK(role IN ('admin', 'moderator', 'member')),
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_visited DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES groups (id),
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    UNIQUE(group_id, user_id)
+  )`);
+
+  // Group post reads table
+  db.run(`CREATE TABLE IF NOT EXISTS group_post_reads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    group_id INTEGER NOT NULL,
+    last_read_post_id INTEGER,
+    last_read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (group_id) REFERENCES groups (id),
+    FOREIGN KEY (last_read_post_id) REFERENCES posts (id) ON DELETE SET NULL,
+    UNIQUE(user_id, group_id)
+  )`);
+
+  // Add group_id column to posts table if it doesn't exist
+  db.run(`ALTER TABLE posts ADD COLUMN group_id INTEGER REFERENCES groups(id)`);
+
+  // Add profile_photo column to users table if it doesn't exist
+  db.run(`ALTER TABLE users ADD COLUMN profile_photo TEXT`);
 });
 
 // Authentication middleware
@@ -237,50 +280,93 @@ app.post('/api/login', (req, res) => {
 // Create a post
 app.post('/api/posts', authenticateToken, upload.single('image'), async (req, res) => {
   try {
-    const { content, visibility = 'public' } = req.body;
+    const { content, visibility = 'public', group_id } = req.body;
     const userId = req.user.id;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ error: 'Post content is required' });
     }
 
-    if (!['public', 'private'].includes(visibility)) {
+    if (!['public', 'private', 'group'].includes(visibility)) {
       return res.status(400).json({ error: 'Invalid visibility setting' });
     }
 
-    let imageFilename = null;
-    if (req.file) {
-      const timestamp = Date.now();
-      const originalName = req.file.originalname;
-      const extension = path.extname(originalName);
-      imageFilename = `post_${timestamp}_${Math.random().toString(36).substring(2)}${extension}`;
-      
-      await storageService.saveFile(req.file, imageFilename);
+    // If posting to a group, validate group membership
+    if (visibility === 'group' && group_id) {
+      db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
+        [group_id, userId], (err, membership) => {
+        if (err) {
+          console.error('Error checking group membership:', err);
+          return res.status(500).json({ error: 'Server error' });
+        }
+        
+        if (!membership) {
+          return res.status(403).json({ error: 'You must be a member of the group to post there' });
+        }
+        
+        // Continue with post creation
+        createPost();
+      });
+    } else {
+      // Create post without group validation
+      createPost();
     }
 
-    db.run(
-      'INSERT INTO posts (user_id, content, image_filename, visibility) VALUES (?, ?, ?, ?)',
-      [userId, content.trim(), imageFilename, visibility],
-      function(err) {
-        if (err) {
-          // If there was an error and we saved an image, try to delete it
-          if (imageFilename) {
-            storageService.deleteFile(imageFilename);
-          }
-          return res.status(500).json({ error: 'Error creating post' });
+    function createPost() {
+      let imageFilename = null;
+      if (req.file) {
+        const timestamp = Date.now();
+        const originalName = req.file.originalname;
+        const extension = path.extname(originalName);
+        imageFilename = `post_${timestamp}_${Math.random().toString(36).substring(2)}${extension}`;
+        
+        storageService.saveFile(req.file, imageFilename).then(() => {
+          insertPost();
+        }).catch(err => {
+          console.error('Error saving image:', err);
+          insertPost(); // Continue without image
+        });
+      } else {
+        insertPost();
+      }
+
+      function insertPost() {
+        const postData = [userId, content.trim(), imageFilename, visibility];
+        let query = 'INSERT INTO posts (user_id, content, image_filename, visibility';
+        let placeholders = 'VALUES (?, ?, ?, ?';
+        
+        if (group_id) {
+          query += ', group_id';
+          placeholders += ', ?';
+          postData.push(group_id);
         }
-        res.status(201).json({
-          message: 'Post created successfully',
-          post: { 
-            id: this.lastID, 
-            content: content.trim(), 
-            user_id: userId,
-            image_filename: imageFilename,
-            visibility
+        
+        query += ') ' + placeholders + ')';
+        
+        db.run(query, postData, function(err) {
+          if (err) {
+            console.error('Error creating post:', err);
+            // If there was an error and we saved an image, try to delete it
+            if (imageFilename) {
+              storageService.deleteFile(imageFilename);
+            }
+            return res.status(500).json({ error: 'Error creating post' });
           }
+          
+          res.status(201).json({
+            message: 'Post created successfully',
+            post: { 
+              id: this.lastID, 
+              content: content.trim(), 
+              user_id: userId,
+              image_filename: imageFilename,
+              visibility,
+              group_id: group_id || null
+            }
+          });
         });
       }
-    );
+    }
   } catch (error) {
     console.error('Error creating post:', error);
     res.status(500).json({ error: 'Error creating post' });
@@ -996,6 +1082,276 @@ app.get('/api/connections', authenticateToken, (req, res) => {
       res.json(connections);
     });
   }
+});
+
+// ===== GROUPS SYSTEM API ENDPOINTS =====
+
+// Create a new group
+app.post('/api/groups', authenticateToken, (req, res) => {
+  const { name, description, isPublic = true } = req.body;
+  const creatorId = req.user.id;
+
+  if (!name || name.trim().length === 0) {
+    return res.status(400).json({ error: 'Group name is required' });
+  }
+
+  // Check if group name already exists
+  db.get('SELECT id FROM groups WHERE LOWER(name) = LOWER(?)', [name.trim()], (err, existingGroup) => {
+    if (err) {
+      console.error('Error checking group name:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    if (existingGroup) {
+      return res.status(400).json({ error: 'Group name already exists' });
+    }
+
+    // Create the group
+    db.run(
+      'INSERT INTO groups (name, description, creator_id, is_public) VALUES (?, ?, ?, ?)',
+      [name.trim(), description?.trim() || null, creatorId, isPublic ? 1 : 0],
+      function(err) {
+        if (err) {
+          console.error('Error creating group:', err);
+          return res.status(500).json({ error: 'Failed to create group' });
+        }
+
+        const groupId = this.lastID;
+
+        // Add creator as admin member
+        db.run(
+          'INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
+          [groupId, creatorId, 'admin'],
+          (err) => {
+            if (err) {
+              console.error('Error adding creator to group:', err);
+            }
+          }
+        );
+
+        res.status(201).json({
+          message: 'Group created successfully',
+          group: {
+            id: groupId,
+            name: name.trim(),
+            description: description?.trim(),
+            creator_id: creatorId,
+            is_public: isPublic
+          }
+        });
+      }
+    );
+  });
+});
+
+// Get all public groups
+app.get('/api/groups', (req, res) => {
+  const query = `
+    SELECT g.*, 
+           u.username as creator_name,
+           COUNT(gm.user_id) as member_count
+    FROM groups g
+    LEFT JOIN users u ON g.creator_id = u.id
+    LEFT JOIN group_members gm ON g.id = gm.group_id
+    WHERE g.is_public = 1
+    GROUP BY g.id
+    ORDER BY g.created_at DESC
+  `;
+
+  db.all(query, (err, groups) => {
+    if (err) {
+      console.error('Error fetching groups:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    res.json({ groups });
+  });
+});
+
+// Get user's groups with unread counts
+app.get('/api/user/groups', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  const query = `
+    SELECT g.*,
+           gm.role,
+           gm.joined_at,
+           gm.last_visited,
+           COUNT(p.id) as total_posts,
+           COALESCE(
+             (SELECT COUNT(p2.id) 
+              FROM posts p2 
+              WHERE p2.group_id = g.id 
+              AND p2.created_at > gm.last_visited), 0
+           ) as unread_posts
+    FROM group_members gm
+    JOIN groups g ON gm.group_id = g.id
+    LEFT JOIN posts p ON g.id = p.group_id
+    WHERE gm.user_id = ?
+    GROUP BY g.id
+    ORDER BY unread_posts DESC, g.name
+  `;
+
+  db.all(query, [userId], (err, userGroups) => {
+    if (err) {
+      console.error('Error fetching user groups:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    res.json({ groups: userGroups });
+  });
+});
+
+// Join a group
+app.post('/api/groups/:groupId/join', authenticateToken, (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.id;
+
+  // Check if group exists and is public
+  db.get('SELECT id, is_public FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      console.error('Error checking group:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    if (!group.is_public) {
+      return res.status(403).json({ error: 'Cannot join private group' });
+    }
+
+    // Check if already a member
+    db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
+      [groupId, userId], (err, existingMember) => {
+      if (err) {
+        console.error('Error checking membership:', err);
+        return res.status(500).json({ error: 'Server error' });
+      }
+
+      if (existingMember) {
+        return res.status(400).json({ error: 'Already a member of this group' });
+      }
+
+      // Join the group
+      db.run(
+        'INSERT INTO group_members (group_id, user_id) VALUES (?, ?)',
+        [groupId, userId],
+        function(err) {
+          if (err) {
+            console.error('Error joining group:', err);
+            return res.status(500).json({ error: 'Failed to join group' });
+          }
+
+          res.json({ message: 'Successfully joined group' });
+        }
+      );
+    });
+  });
+});
+
+// Leave a group
+app.delete('/api/groups/:groupId/leave', authenticateToken, (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.id;
+
+  // Check if user is the creator (can't leave if they're the only admin)
+  db.get('SELECT creator_id FROM groups WHERE id = ?', [groupId], (err, group) => {
+    if (err) {
+      console.error('Error checking group:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    if (group.creator_id === userId) {
+      return res.status(400).json({ error: 'Group creator cannot leave. Transfer ownership or delete the group.' });
+    }
+
+    // Leave the group
+    db.run(
+      'DELETE FROM group_members WHERE group_id = ? AND user_id = ?',
+      [groupId, userId],
+      function(err) {
+        if (err) {
+          console.error('Error leaving group:', err);
+          return res.status(500).json({ error: 'Failed to leave group' });
+        }
+
+        if (this.changes === 0) {
+          return res.status(400).json({ error: 'Not a member of this group' });
+        }
+
+        res.json({ message: 'Successfully left group' });
+      }
+    );
+  });
+});
+
+// Mark group as read (update last_visited)
+app.post('/api/groups/:groupId/read', authenticateToken, (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.id;
+
+  db.run(
+    'UPDATE group_members SET last_visited = datetime("now") WHERE group_id = ? AND user_id = ?',
+    [groupId, userId],
+    function(err) {
+      if (err) {
+        console.error('Error marking group as read:', err);
+        return res.status(500).json({ error: 'Server error' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(400).json({ error: 'Not a member of this group' });
+      }
+
+      res.json({ message: 'Group marked as read' });
+    }
+  );
+});
+
+// Get group posts
+app.get('/api/groups/:groupId/posts', authenticateToken, (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.id;
+
+  // Check if user is a member
+  db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', 
+    [groupId, userId], (err, membership) => {
+    if (err) {
+      console.error('Error checking membership:', err);
+      return res.status(500).json({ error: 'Server error' });
+    }
+
+    if (!membership) {
+      return res.status(403).json({ error: 'Not a member of this group' });
+    }
+
+    // Get group posts with user info
+    const query = `
+      SELECT p.*, u.username, u.profile_photo,
+             COUNT(c.id) as comment_count
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN comments c ON p.id = c.post_id
+      WHERE p.group_id = ?
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `;
+
+    db.all(query, [groupId], (err, posts) => {
+      if (err) {
+        console.error('Error fetching group posts:', err);
+        return res.status(500).json({ error: 'Server error' });
+      }
+
+      res.json({ posts });
+    });
+  });
 });
 
 // Start server

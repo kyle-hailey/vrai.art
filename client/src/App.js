@@ -13,6 +13,8 @@ import Profile from './components/Profile';
 import UserProfile from './components/UserProfile';
 import Users from './components/Users';
 import Connections from './components/Connections';
+import Groups from './components/Groups';
+import GroupsDiscovery from './components/GroupsDiscovery';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -79,6 +81,22 @@ function AppRoutes() {
               element={
                 <ProtectedRoute>
                   <Connections />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/groups" 
+              element={
+                <ProtectedRoute>
+                  <Groups />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/discover" 
+              element={
+                <ProtectedRoute>
+                  <GroupsDiscovery />
                 </ProtectedRoute>
               } 
             />
