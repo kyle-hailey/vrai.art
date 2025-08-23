@@ -196,24 +196,35 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
 
+  console.log('Login attempt for username:', username);
+
   if (!username || !password) {
+    console.log('Missing username or password in login request');
     return res.status(400).json({ error: 'Username and password are required' });
   }
 
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
     if (err) {
+      console.error('Database error during login:', err);
       return res.status(500).json({ error: 'Server error' });
     }
 
     if (!user) {
+      console.log('Login failed: User not found for username:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('User found, ID:', user.id, 'Password hash length:', user.password.length);
+    
     const validPassword = await bcrypt.compare(password, user.password);
+    console.log('Password comparison result:', validPassword);
+    
     if (!validPassword) {
+      console.log('Login failed: Invalid password for username:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('Login successful for username:', username);
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET);
     res.json({
       message: 'Login successful',
@@ -837,15 +848,20 @@ app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     
+    console.log('Password reset request received:', { token: token.substring(0, 10) + '...', passwordLength: newPassword.length });
+    
     if (!token || !newPassword) {
+      console.log('Missing token or password in request');
       return res.status(400).json({ error: 'Token and new password are required' });
     }
     
     if (newPassword.length < 6) {
+      console.log('Password too short:', newPassword.length);
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     
     // Find valid reset token
+    console.log('Looking for reset token in database...');
     db.get('SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now")', 
       [token], async (err, resetToken) => {
       if (err) {
@@ -854,26 +870,39 @@ app.post('/api/auth/reset-password', async (req, res) => {
       }
       
       if (!resetToken) {
+        console.log('Invalid or expired reset token');
         return res.status(400).json({ error: 'Invalid or expired reset token' });
       }
       
+      console.log('Reset token found for user ID:', resetToken.user_id);
+      console.log('Token expires at:', resetToken.expires_at);
+      
       // Hash new password
+      console.log('Hashing new password...');
       const hashedPassword = await bcrypt.hash(newPassword, 10);
+      console.log('Password hashed successfully, length:', hashedPassword.length);
       
       // Update user password
+      console.log('Updating user password in database...');
       db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, resetToken.user_id], function(err) {
         if (err) {
           console.error('Error updating password:', err);
           return res.status(500).json({ error: 'Failed to update password' });
         }
         
+        console.log('Password updated successfully. Rows affected:', this.changes);
+        
         // Delete used reset token
+        console.log('Deleting used reset token...');
         db.run('DELETE FROM password_reset_tokens WHERE id = ?', [resetToken.id], (err) => {
           if (err) {
             console.error('Error deleting reset token:', err);
+          } else {
+            console.log('Reset token deleted successfully');
           }
         });
         
+        console.log('Password reset completed successfully for user ID:', resetToken.user_id);
         res.json({ message: 'Password updated successfully' });
       });
     });
