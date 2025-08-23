@@ -169,11 +169,63 @@ db.serialize(() => {
     UNIQUE(user_id, group_id)
   )`);
 
-  // Add group_id column to posts table if it doesn't exist
-  db.run(`ALTER TABLE posts ADD COLUMN group_id INTEGER REFERENCES groups(id)`);
+  // Check if group_id column exists in posts table before adding it
+  db.get("PRAGMA table_info(posts)", (err, columns) => {
+    if (err) {
+      console.error('Error checking posts table schema:', err);
+      return;
+    }
+    
+    // Check if group_id column exists
+    db.get("SELECT COUNT(*) as count FROM pragma_table_info('posts') WHERE name='group_id'", (err, result) => {
+      if (err) {
+        console.error('Error checking for group_id column:', err);
+        return;
+      }
+      
+      if (result.count === 0) {
+        // Column doesn't exist, add it
+        db.run('ALTER TABLE posts ADD COLUMN group_id INTEGER REFERENCES groups(id)', (err) => {
+          if (err) {
+            console.error('Error adding group_id column:', err);
+          } else {
+            console.log('Added group_id column to posts table');
+          }
+        });
+      } else {
+        console.log('group_id column already exists in posts table');
+      }
+    });
+  });
 
-  // Add profile_photo column to users table if it doesn't exist
-  db.run(`ALTER TABLE users ADD COLUMN profile_photo TEXT`);
+  // Check if profile_photo column exists in users table before adding it
+  db.get("PRAGMA table_info(users)", (err, columns) => {
+    if (err) {
+      console.error('Error checking users table schema:', err);
+      return;
+    }
+    
+    // Check if profile_photo column exists
+    db.get("SELECT COUNT(*) as count FROM pragma_table_info('users') WHERE name='profile_photo'", (err, result) => {
+      if (err) {
+        console.error('Error checking for profile_photo column:', err);
+        return;
+      }
+      
+      if (result.count === 0) {
+        // Column doesn't exist, add it
+        db.run('ALTER TABLE users ADD COLUMN profile_photo TEXT', (err) => {
+          if (err) {
+            console.error('Error adding profile_photo column:', err);
+          } else {
+            console.log('Added profile_photo column to users table');
+          }
+        });
+      } else {
+        console.log('profile_photo column already exists in users table');
+      }
+    });
+  });
 });
 
 // Authentication middleware
