@@ -15,6 +15,7 @@ import Users from './components/Users';
 import Connections from './components/Connections';
 import Groups from './components/Groups';
 import GroupsDiscovery from './components/GroupsDiscovery';
+import GroupsSidebar from './components/GroupsSidebar';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -29,78 +30,81 @@ function AppRoutes() {
     <Router>
       <div className="App">
         <Navbar />
-        <div className="container">
-          <Routes>
-            <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
-            <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
-            <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
-            <Route path="/forgot-password" element={user ? <Navigate to="/" /> : <ForgotPassword />} />
-            <Route path="/reset-password" element={user ? <Navigate to="/" /> : <ResetPassword />} />
-            <Route 
-              path="/create-post" 
-              element={
-                <ProtectedRoute>
-                  <CreatePost />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/posts/:id" 
-              element={
-                <ProtectedRoute>
-                  <PostDetail />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/users/:username" 
-              element={
-                <ProtectedRoute>
-                  <UserProfile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/users" 
-              element={
-                <ProtectedRoute>
-                  <Users />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/connections" 
-              element={
-                <ProtectedRoute>
-                  <Connections />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/groups" 
-              element={
-                <ProtectedRoute>
-                  <Groups />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/discover" 
-              element={
-                <ProtectedRoute>
-                  <GroupsDiscovery />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
+        <div className="app-layout">
+          {user && <GroupsSidebar />}
+          <div className={`main-content ${user ? 'with-sidebar' : ''}`}>
+            <Routes>
+              <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
+              <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+              <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+              <Route path="/forgot-password" element={user ? <Navigate to="/" /> : <ForgotPassword />} />
+              <Route path="/reset-password" element={user ? <Navigate to="/" /> : <ResetPassword />} />
+              <Route 
+                path="/create-post" 
+                element={
+                  <ProtectedRoute>
+                    <CreatePost />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/posts/:id" 
+                element={
+                  <ProtectedRoute>
+                    <PostDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/users/:username" 
+                element={
+                  <ProtectedRoute>
+                    <UserProfile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/users" 
+                element={
+                  <ProtectedRoute>
+                    <Users />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/connections" 
+                element={
+                  <ProtectedRoute>
+                    <Connections />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/groups" 
+                element={
+                  <ProtectedRoute>
+                    <Groups />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/discover" 
+                element={
+                  <ProtectedRoute>
+                    <GroupsDiscovery />
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </div>
         </div>
       </div>
     </Router>

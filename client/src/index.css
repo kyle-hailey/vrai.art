@@ -706,3 +706,30 @@ code {
   color: #1c1e21;
   line-height: 1.4;
 } 
+
+/* App Layout with Sidebar */
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 60px); /* Adjust for navbar height */
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background: #f8f9fa;
+}
+
+.main-content.with-sidebar {
+  margin-left: 280px; /* Match sidebar width */
+}
+
+/* Responsive sidebar layout */
+@media (max-width: 768px) {
+  .main-content.with-sidebar {
+    margin-left: 0;
+  }
+  
+  .app-layout {
+    flex-direction: column;
+  }
+} 
