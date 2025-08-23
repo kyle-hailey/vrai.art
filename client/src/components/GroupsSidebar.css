@@ -111,8 +111,10 @@
 .section-header h3 {
   margin: 0;
   color: #1a1a1a;
-  font-size: 1rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .header-controls {
@@ -182,7 +184,7 @@
 
 .group-name {
   color: #1a1a1a;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;

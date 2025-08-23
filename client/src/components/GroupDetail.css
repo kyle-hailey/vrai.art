@@ -15,20 +15,28 @@
 
 .group-info {
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .group-name {
-  margin: 0 0 15px 0;
+  margin: 0;
   color: #1a1a1a;
   font-size: 2.5rem;
   font-weight: 700;
+  line-height: 1.2;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .group-description {
-  margin: 0 0 20px 0;
+  margin: 0;
   color: #666;
   font-size: 1.1rem;
   line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .group-meta {
