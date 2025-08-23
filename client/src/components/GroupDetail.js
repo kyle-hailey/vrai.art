@@ -14,55 +14,70 @@ const GroupDetail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (groupId && user && token) {
-      fetchGroupDetails();
-      fetchGroupPosts();
-    }
+    const fetchData = async () => {
+      if (!groupId || !user || !token) {
+        console.log('Missing required data:', { groupId, hasUser: !!user, hasToken: !!token });
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fetching group data for:', groupId);
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Use Promise.all to wait for both group details and posts to load
+        const [groupResponse, postsResponse] = await Promise.all([
+          fetch(`${getApiUrl()}/groups/${groupId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }),
+          fetch(`${getApiUrl()}/groups/${groupId}/posts`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+        ]);
+
+        console.log('API responses received:', {
+          groupStatus: groupResponse.status,
+          postsStatus: postsResponse.status
+        });
+
+        // Process group details response
+        if (!groupResponse.ok) {
+          const errorText = await groupResponse.text();
+          console.error('Group details error response:', errorText);
+          throw new Error(`Failed to fetch group details: ${groupResponse.status} - ${errorText}`);
+        }
+        const groupData = await groupResponse.json();
+        console.log('Group data received:', groupData);
+        setGroup(groupData.group);
+
+        // Process group posts response
+        if (!postsResponse.ok) {
+          const errorText = await postsResponse.text();
+          console.error('Group posts error response:', errorText);
+          throw new Error(`Failed to fetch group posts: ${postsResponse.status} - ${errorText}`);
+        }
+        const postsData = await postsResponse.json();
+        console.log('Posts data received:', postsData);
+        setPosts(postsData.posts || []);
+
+      } catch (err) {
+        console.error('Error fetching group data:', err);
+        setError(err.message || 'Failed to load group data. Please try again.');
+      } finally {
+        console.log('Setting loading to false');
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [groupId, user, token]);
-
-  const fetchGroupDetails = async () => {
-    try {
-      const response = await fetch(`${getApiUrl()}/groups/${groupId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch group details');
-      }
-
-      const data = await response.json();
-      setGroup(data.group);
-    } catch (err) {
-      console.error('Error fetching group details:', err);
-      setError(err.message);
-    }
-  };
-
-  const fetchGroupPosts = async () => {
-    try {
-      const response = await fetch(`${getApiUrl()}/groups/${groupId}/posts`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch group posts');
-      }
-
-      const data = await response.json();
-      setPosts(data.posts || []);
-    } catch (err) {
-      console.error('Error fetching group posts:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreatePost = () => {
     navigate('/create-post');

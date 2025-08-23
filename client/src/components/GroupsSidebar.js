@@ -90,6 +90,16 @@ const GroupsSidebar = ({ onCollapseChange }) => {
     return null; // Don't show sidebar if not logged in
   }
 
+  // Additional check to ensure we're not on auth pages
+  const isAuthPage = location.pathname === '/login' || 
+                    location.pathname === '/register' || 
+                    location.pathname === '/forgot-password' || 
+                    location.pathname === '/reset-password';
+  
+  if (isAuthPage) {
+    return null; // Don't show sidebar on authentication pages
+  }
+
   if (loading) {
     return (
       <div className={`groups-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
