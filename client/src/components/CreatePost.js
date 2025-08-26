@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ImageUpload from './ImageUpload';
@@ -13,7 +13,7 @@ const CreatePost = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingGroups, setLoadingGroups] = useState(true);
-  const { user, token } = useContext(useAuth);
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

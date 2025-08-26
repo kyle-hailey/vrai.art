@@ -181,7 +181,10 @@ const Groups = () => {
   return (
     <div className="groups-container">
       <div className="groups-header">
-        <h1>My Groups</h1>
+        <h1>MY GROUPS</h1>
+      </div>
+
+      <div className="create-group-section">
         <button 
           className="btn btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -261,46 +264,14 @@ const Groups = () => {
             </button>
           </div>
         ) : (
-          groups.map(group => (
-            <div key={group.id} className="group-card">
-              <div className="group-header" onClick={() => handleGroupClick(group.id)}>
-                <h3 className="group-name">{group.name}</h3>
-                <div className="group-stats">
-                  <span className="member-count">{group.total_posts} posts</span>
-                  {group.unread_posts > 0 && (
-                    <span className="unread-count">{group.unread_posts} new</span>
-                  )}
-                </div>
+          <div className="groups-table">
+            {groups.map(group => (
+              <div key={group.id} className="group-row" onClick={() => handleGroupClick(group.id)}>
+                <span className="group-name">{group.name}</span>
+                <span className="group-count">{group.unread_posts || 0}</span>
               </div>
-              
-              <div className="group-description">
-                {group.description || 'No description available'}
-              </div>
-              
-              <div className="group-meta">
-                <span className="role-badge">{group.role}</span>
-                <span className="joined-date">Joined {new Date(group.joined_at).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="group-actions">
-                {group.unread_posts > 0 && (
-                  <button 
-                    className="btn btn-small btn-secondary"
-                    onClick={() => handleMarkAsRead(group.id)}
-                  >
-                    Mark as Read
-                  </button>
-                )}
-                
-                <button 
-                  className="btn btn-small btn-danger"
-                  onClick={() => handleLeaveGroup(group.id)}
-                >
-                  Leave Group
-                </button>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

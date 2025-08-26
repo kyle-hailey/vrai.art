@@ -6,11 +6,9 @@
 
 .groups-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e1e8ed;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
 }
 
 .groups-header h1 {
@@ -18,6 +16,11 @@
   color: #1a1a1a;
   font-size: 2.5rem;
   font-weight: 700;
+}
+
+.create-group-section {
+  margin-bottom: 20px;
+  text-align: left;
 }
 
 .create-group-form {
@@ -85,106 +88,48 @@
   gap: 20px;
 }
 
-.group-card {
+.groups-table {
   background: white;
   border: 1px solid #e1e8ed;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.group-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
-}
-
-.group-header {
+.group-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  margin-bottom: 15px;
+  transition: background-color 0.2s ease;
 }
 
-.group-header:hover .group-name {
-  color: #1877f2;
+.group-row:last-child {
+  border-bottom: none;
+}
+
+.group-row:hover {
+  background-color: #f8f9fa;
 }
 
 .group-name {
-  margin: 0 0 10px 0;
   color: #1a1a1a;
-  font-size: 1.4rem;
-  font-weight: 600;
-  transition: color 0.2s ease;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
-.group-stats {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-
-.member-count {
+.group-count {
   color: #666;
   font-size: 0.9rem;
-}
-
-.unread-count {
-  background: #ff4757;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
   font-weight: 600;
-  animation: pulse 2s infinite;
+  min-width: 30px;
+  text-align: right;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
+/* Old group-card styles removed - now using compact list format */
 
-.group-description {
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 15px;
-  font-size: 0.95rem;
-}
-
-.group-meta {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.role-badge {
-  background: #1877f2;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-.role-badge.admin {
-  background: #ff6b35;
-}
-
-.role-badge.moderator {
-  background: #ffa726;
-}
-
-.joined-date {
-  color: #999;
-  font-size: 0.85rem;
-}
-
-.group-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
+/* Clean up unused styles - keeping only what's needed for the compact list */
 
 .no-groups {
   text-align: center;
