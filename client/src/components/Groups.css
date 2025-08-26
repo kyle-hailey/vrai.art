@@ -1,25 +1,25 @@
 .groups-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 15px;
 }
 
 .groups-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
 }
 
 .groups-header h1 {
   margin: 0;
   color: #1a1a1a;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
 }
 
 .create-group-section {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   text-align: left;
 }
 
@@ -27,8 +27,8 @@
   background: #f8f9fa;
   border: 1px solid #e1e8ed;
   border-radius: 12px;
-  padding: 25px;
-  margin-bottom: 30px;
+  padding: 20px;
+  margin-bottom: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -85,7 +85,7 @@
 .groups-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
 }
 
 .groups-table {
@@ -99,7 +99,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 16px;
+  padding: 4px 16px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -115,15 +115,15 @@
 
 .group-name {
   color: #1a1a1a;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
 .group-count {
   color: #666;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  min-width: 24px;
+  min-width: 20px;
   text-align: right;
 }
 
